@@ -230,6 +230,7 @@
   <button class="tab" data-v="clientes" onclick="goTo('clientes')">🎂 Clientes <span class="count" id="count-cli">0</span></button>
   <button class="tab" data-v="promos" onclick="goTo('promos')">🏷️ Promociones</button>
   <button class="tab" data-v="material" onclick="goTo('material')">📦 Material</button>
+  <button class="tab" data-v="horario" onclick="goTo('horario')">🕐 Horario</button>
   <button class="tab" data-v="comunicados" onclick="goTo('comunicados')">📣 Comunicados <span class="count" id="count-com">0</span></button>
   <button class="tab" data-v="visual" onclick="goTo('visual')">🖼️ Visual</button>
 </div>
@@ -239,6 +240,7 @@
   <button class="tab active" data-v="c-panel" onclick="goTo('c-panel')">📊 Panel</button>
   <button class="tab" data-v="c-comunicados" onclick="goTo('c-comunicados')">📣 Comunicados</button>
   <button class="tab" data-v="c-material" onclick="goTo('c-material')">📦 Material <span class="count" id="count-ped">0</span></button>
+  <button class="tab" data-v="c-horarios" onclick="goTo('c-horarios')">🕐 Horarios <span class="count" id="count-hor">0</span></button>
   <button class="tab" data-v="c-promos" onclick="goTo('c-promos')">🏷️ Promociones</button>
 </div>
 
@@ -333,6 +335,37 @@
   </div>
 </div></div>
 
+<!-- ══════════ VISTA: HORARIO (tienda) ══════════ -->
+<div id="view-horario" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Horario de la tienda</div>
+    <div class="page-sub">Consulta tu horario y solicita cambios: verano, festivos, fiestas locales…</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Horario actual</div>
+    <div id="hor-actual"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Solicitar cambio de horario</div>
+    <div class="form-row cols-3">
+      <div><label>Tipo</label><select id="hor-tipo">
+        <option>Horario de verano</option><option>Festivo nacional</option><option>Festivo local</option>
+        <option>Fiesta local / patronal</option><option>Evento especial</option><option>Otro</option></select></div>
+      <div><label>Desde</label><input type="date" id="hor-desde"></div>
+      <div><label>Hasta (opcional)</label><input type="date" id="hor-hasta"></div>
+    </div>
+    <div class="form-row cols-2">
+      <div><label>Horario propuesto</label><input type="text" id="hor-horario" placeholder='Ej: 10:00 – 15:00, o "Cerrado"'></div>
+      <div><label>Motivo</label><input type="text" id="hor-motivo" placeholder="Ej: San Xoán, festivo local"></div>
+    </div>
+    <div class="actions-bar"><button class="btn btn-primary" onclick="crearSolicitudHorario()">Enviar solicitud</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Mis solicitudes</div>
+    <div id="hor-lista"></div>
+  </div>
+</div></div>
+
 <!-- ══════════ VISTA: COMUNICADOS (tienda) ══════════ -->
 <div id="view-comunicados" class="view"><div class="container">
   <div class="page-header">
@@ -401,6 +434,18 @@
   <div class="card">
     <div class="card-title">Peticiones</div>
     <div style="overflow-x:auto;"><table class="refs-table" id="c-mat-tabla"></table></div>
+  </div>
+</div></div>
+
+<!-- ══════════ VISTA CENTRAL: HORARIOS ══════════ -->
+<div id="view-c-horarios" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Solicitudes de horario</div>
+    <div class="page-sub">Aprueba o rechaza los cambios solicitados por las tiendas</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Solicitudes</div>
+    <div style="overflow-x:auto;"><table class="refs-table" id="c-hor-tabla"></table></div>
   </div>
 </div></div>
 
@@ -521,7 +566,7 @@ function seed() {
     clientes.push(mk(8, { cumpleEnDias:null, meses:18 }));
   });
   const hoy = HOY().getTime();
-  const iso = ts => new Date(ts).toISOString().slice(0,10);
+  const iso = ts => isoLocal(new Date(ts));
   const promos = [
     { id:'p1', nombre:'Día de la Madre', meca:'-15% en accesorios y pañuelos', inicio:iso(hoy-40*DIA), fin:iso(hoy-33*DIA), color:'#6B3B8B', plv:'Cartel mostrador A5' },
     { id:'p2', nombre:'Especial Lino', meca:'2ª unidad -30% en prendas de lino', inicio:iso(hoy-6*DIA), fin:iso(hoy+5*DIA), color:'#1A4A7A', plv:'Cartel A4 mostrador + stopper' },
@@ -540,7 +585,8 @@ function seed() {
     { id:'c2', titulo:'Horario especial inicio de Rebajas', cuerpo:'El primer día de Rebajas todas las tiendas abren 30 minutos antes de su horario habitual.\n\nRecordad reforzar la zona de caja y tener preparado el almacén con la reposición de las referencias señaladas en el plan de Rebajas.', fecha:hoy-DIA, confirm:true, tiendas:todas, leidoPor:['t1','t3','t6'] },
     { id:'c3', titulo:'Nuevo procedimiento de traspasos entre tiendas', cuerpo:'A partir de ahora, los traspasos entre tiendas se registran siempre antes del envío físico de la prenda.\n\nEl albarán debe ir dentro de la caja y el registro hecho el mismo día. Cualquier duda, contestad a este comunicado en vuestra próxima reunión semanal.', fecha:hoy-4*DIA, confirm:false, tiendas:todas, leidoPor:['t1','t2','t3','t4','t5','t7'] },
   ];
-  return { clientes, promos, pedidos, comunicados };
+  const sh = seedHorarios();
+  return { clientes, promos, pedidos, comunicados, horarios: sh.horarios, solicitudesHorario: sh.solicitudes };
 }
 
 // ══════════════════════════════════
@@ -555,10 +601,13 @@ let comTiendasSel = TIENDAS.map(t=>t.id);
 let modalCom = null;
 
 function load() {
-  try { const s = localStorage.getItem('rv_intranet_v1'); if (s) { DB = JSON.parse(s); return; } } catch(e){}
+  try { const s = localStorage.getItem('rv_intranet_v1'); if (s) { DB = JSON.parse(s); migrar(); return; } } catch(e){}
   DB = seed(); save();
 }
 function save() { localStorage.setItem('rv_intranet_v1', JSON.stringify(DB)); }
+function migrar() {
+  if (!DB.solicitudesHorario) { const sh = seedHorarios(); DB.solicitudesHorario = sh.solicitudes; DB.horarios = sh.horarios; save(); }
+}
 const tNombre = id => (TIENDAS.find(t=>t.id===id)||{}).nombre || id;
 
 // ══════════════════════════════════
@@ -770,6 +819,83 @@ function renderMaterialCentral() {
 }
 
 // ══════════════════════════════════
+// HORARIO
+// ══════════════════════════════════
+const HOR_BADGE = { Pendiente:'badge-pending', Aprobada:'badge-done', Rechazada:'badge-red' };
+function isoLocal(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function seedHorarios() {
+  const hoy = HOY().getTime();
+  const iso = ts => isoLocal(new Date(ts));
+  const horarios = { def:{ lv:'10:00 – 14:00 / 16:30 – 20:30', sab:'10:30 – 14:30 / 17:00 – 20:30', dom:'Cerrado' } };
+  TIENDAS.forEach(t => horarios[t.id] = {...horarios.def});
+  horarios.t1 = { lv:'10:00 – 21:00', sab:'10:00 – 21:00', dom:'11:00 – 20:00' };
+  const solicitudes = [
+    { id:'h1', tienda:'t2', tipo:'Festivo local', desde:iso(hoy+13*DIA), hasta:iso(hoy+14*DIA), horario:'Cerrado', motivo:'San Xoán', estado:'Pendiente', respuesta:'', fecha:hoy-DIA },
+    { id:'h2', tienda:'t5', tipo:'Horario de verano', desde:iso(hoy+21*DIA), hasta:iso(hoy+82*DIA), horario:'10:00 – 14:00 / 17:30 – 21:00', motivo:'Julio y agosto', estado:'Aprobada', respuesta:'', fecha:hoy-3*DIA },
+    { id:'h3', tienda:'t7', tipo:'Fiesta local / patronal', desde:iso(hoy+66*DIA), hasta:iso(hoy+74*DIA), horario:'11:00 – 15:00', motivo:'Aste Nagusia', estado:'Pendiente', respuesta:'', fecha:hoy-2*DIA },
+  ];
+  return { horarios, solicitudes };
+}
+function fmtRango(s) { return fmtCorta(s.desde)+(s.hasta && s.hasta!==s.desde ? ' → '+fmtCorta(s.hasta) : ''); }
+function horarioHoy() {
+  const hoy = isoLocal(HOY());
+  const esp = DB.solicitudesHorario.find(s => s.tienda===cur && s.estado==='Aprobada' && s.desde<=hoy && s.hasta>=hoy);
+  if (esp) return { texto: esp.horario, sub: esc(esp.tipo)+' · horario especial', dot:'alerta' };
+  const h = DB.horarios[cur] || DB.horarios.def;
+  const d = HOY().getDay();
+  const texto = d===0 ? h.dom : d===6 ? h.sab : h.lv;
+  const pend = DB.solicitudesHorario.filter(s => s.tienda===cur && s.estado==='Pendiente').length;
+  return { texto, sub: pend ? pend+' solicitud'+(pend>1?'es':'')+' en revisión' : 'horario habitual de hoy', dot: pend ? '' : 'ok' };
+}
+function crearSolicitudHorario() {
+  const desde = document.getElementById('hor-desde').value;
+  const hasta = document.getElementById('hor-hasta').value;
+  const horario = document.getElementById('hor-horario').value.trim();
+  if (!desde || !horario) { toast('Indica al menos la fecha de inicio y el horario propuesto'); return; }
+  if (hasta && hasta < desde) { toast('La fecha de fin es anterior al inicio'); return; }
+  DB.solicitudesHorario.unshift({ id:'h'+Date.now(), tienda:cur, tipo:document.getElementById('hor-tipo').value,
+    desde, hasta: hasta||desde, horario, motivo:document.getElementById('hor-motivo').value.trim(),
+    estado:'Pendiente', respuesta:'', fecha:Date.now() });
+  save(); ['hor-desde','hor-hasta','hor-horario','hor-motivo'].forEach(i=>document.getElementById(i).value='');
+  toast('Solicitud enviada a central','success'); renderAll();
+}
+function responderSolicitud(id, estado) {
+  const s = DB.solicitudesHorario.find(x=>x.id===id); if (!s) return;
+  s.estado = estado;
+  if (estado==='Rechazada') { s.respuesta = (prompt('Motivo del rechazo (opcional):')||'').trim(); }
+  save(); renderAll(); toast('Solicitud '+estado.toLowerCase(),'success');
+}
+function renderHorario() {
+  const h = DB.horarios[cur] || DB.horarios.def;
+  const hoy = isoLocal(HOY());
+  const esp = DB.solicitudesHorario.find(s => s.tienda===cur && s.estado==='Aprobada' && s.desde<=hoy && s.hasta>=hoy);
+  document.getElementById('hor-actual').innerHTML = `<table class="refs-table">
+    <tr><th>Días</th><th>Horario</th></tr>
+    <tr><td>Lunes a viernes</td><td><b>${esc(h.lv)}</b></td></tr>
+    <tr><td>Sábado</td><td><b>${esc(h.sab)}</b></td></tr>
+    <tr><td>Domingo</td><td><b>${esc(h.dom)}</b></td></tr></table>`
+    + (esp ? `<div style="margin-top:12px;"><span class="badge badge-gold">Hoy: ${esc(esp.horario)} · ${esc(esp.tipo)}</span></div>` : '');
+  const mias = DB.solicitudesHorario.filter(s=>s.tienda===cur);
+  document.getElementById('hor-lista').innerHTML = mias.length ? `<table class="refs-table"><tr><th>Tipo</th><th>Fechas</th><th>Horario propuesto</th><th>Estado</th></tr>`+
+    mias.map(s=>`<tr>
+      <td><b>${esc(s.tipo)}</b>${s.motivo?`<div style="font-size:11px;color:var(--slate);">${esc(s.motivo)}</div>`:''}</td>
+      <td>${fmtRango(s)}</td><td>${esc(s.horario)}</td>
+      <td><span class="badge ${HOR_BADGE[s.estado]}">${s.estado}</span>${s.estado==='Rechazada'&&s.respuesta?`<div style="font-size:11px;color:var(--slate);">${esc(s.respuesta)}</div>`:''}</td>
+    </tr>`).join('')+'</table>' : '<div class="empty">No has solicitado ningún cambio</div>';
+}
+function renderHorariosCentral() {
+  const orden = [...DB.solicitudesHorario].sort((a,b)=>(a.estado==='Pendiente'?0:1)-(b.estado==='Pendiente'?0:1) || b.fecha-a.fecha);
+  document.getElementById('c-hor-tabla').innerHTML = `<tr><th>Tienda</th><th>Tipo</th><th>Fechas</th><th>Horario</th><th>Estado</th><th></th></tr>`+
+    (orden.map(s=>`<tr>
+      <td><b>${tNombre(s.tienda)}</b></td>
+      <td>${esc(s.tipo)}${s.motivo?`<div style="font-size:11px;color:var(--slate);">${esc(s.motivo)}</div>`:''}</td>
+      <td>${fmtRango(s)}</td><td>${esc(s.horario)}</td>
+      <td><span class="badge ${HOR_BADGE[s.estado]}">${s.estado}</span></td>
+      <td>${s.estado==='Pendiente'?`<span style="display:flex;gap:6px;"><button class="btn btn-ghost btn-sm" onclick="responderSolicitud('${s.id}','Aprobada')">✓ Aprobar</button><button class="btn btn-ghost btn-sm" onclick="responderSolicitud('${s.id}','Rechazada')">✕ Rechazar</button></span>`:''}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="empty">Sin solicitudes</td></tr>');
+}
+
+// ══════════════════════════════════
 // COMUNICADOS
 // ══════════════════════════════════
 function comItem(c) {
@@ -849,6 +975,7 @@ function renderHoy() {
   const abiertos = DB.pedidos.filter(p=>p.tienda===cur && p.estado!=='Recibido');
   const enCamino = abiertos.filter(p=>p.estado==='Enviado').length;
   const recuPend = mios.filter(c=>c.meses>=6 && c.recu.estado==='pendiente').length;
+  const hh = horarioHoy();
 
   const tile = (icon, label, num, sub, dot, action) => `
     <div class="hub-tile" onclick="${action}">
@@ -876,6 +1003,7 @@ function renderHoy() {
     tile('📦','Material', abiertos.length,
       abiertos.length ? (enCamino ? enCamino+' en camino · marca la recepción' : 'en gestión por central') : 'sin pedidos abiertos',
       enCamino ? 'alerta' : (abiertos.length ? '' : 'ok'), "goTo('material')") +
+    tile('🕐','Horario', txt(hh.texto), hh.sub, hh.dot, "goTo('horario')") +
     tile('🖼️','Visual', txt('RV Visual'),
       'instrucciones de cambio y fotos', '',
       "window.open('https://paulandrademkt.github.io/Plataforma-visual/','_blank')");
@@ -919,11 +1047,12 @@ function updateCounts() {
   const sinLeer = DB.comunicados.filter(c=>c.tiendas.includes(cur) && !c.leidoPor.includes(cur)).length;
   const solicitados = DB.pedidos.filter(p=>p.estado==='Solicitado').length;
   const setC = (id,n) => { const e=document.getElementById(id); e.textContent=n; e.classList.toggle('zero', n===0); };
-  setC('count-cli', pendFelicitar); setC('count-com', sinLeer); setC('count-ped', solicitados);
+  const horPend = DB.solicitudesHorario.filter(s=>s.estado==='Pendiente').length;
+  setC('count-cli', pendFelicitar); setC('count-com', sinLeer); setC('count-ped', solicitados); setC('count-hor', horPend);
 }
 function renderAll() {
-  renderHoy(); renderClientes(); renderPromos(); renderMaterial(); renderComunicados();
-  renderPanel(); renderComunicadosCentral(); renderMaterialCentral(); renderComTiendasChips(); updateCounts();
+  renderHoy(); renderClientes(); renderPromos(); renderMaterial(); renderHorario(); renderComunicados();
+  renderPanel(); renderComunicadosCentral(); renderMaterialCentral(); renderHorariosCentral(); renderComTiendasChips(); updateCounts();
 }
 function init() {
   load();
