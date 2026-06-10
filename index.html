@@ -244,36 +244,8 @@
 
 <!-- ══════════ VISTA: HOY ══════════ -->
 <div id="view-hoy" class="view active"><div class="container">
-  <div class="hoy-header">
-    <div class="hoy-fecha"><small id="hoy-tienda">—</small><span id="hoy-fecha">—</span></div>
-  </div>
-  <div class="resumen-strip" id="resumen-strip"></div>
-  <div class="hoy-grid">
-    <div class="hoy-col">
-      <div class="card">
-        <div class="card-title">📣 Comunicados sin leer <span class="ct-action" onclick="goTo('comunicados')">Ver todos →</span></div>
-        <div id="hoy-comunicados"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">🎂 Cumpleaños de hoy <span class="ct-action" onclick="goTo('clientes')">Ir a clientes →</span></div>
-        <div id="hoy-cumples"></div>
-      </div>
-    </div>
-    <div class="hoy-col">
-      <div class="card">
-        <div class="card-title">🏷️ Promociones</div>
-        <div id="hoy-promos"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">📦 Mis pedidos de material <span class="ct-action" onclick="goTo('material')">Pedir material →</span></div>
-        <div id="hoy-material"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">📞 Clientes a recuperar <span class="ct-action" onclick="goTo('clientes');setCliTab('recu')">Ver lista →</span></div>
-        <div id="hoy-recu"></div>
-      </div>
-    </div>
-  </div>
+  <div class="hoy-fecha"><small id="hoy-tienda">—</small><span id="hoy-fecha">—</span></div>
+  <div class="hub-grid" id="hub-grid"></div>
 </div></div>
 
 <!-- ══════════ VISTA: CLIENTES ══════════ -->
@@ -380,8 +352,7 @@
     <div class="card-title">RV Visual — Plataforma de cambios</div>
     <p style="font-size:13px;color:var(--slate);line-height:1.6;margin-bottom:16px;">
       Las instrucciones de visual se gestionan en la plataforma RV Visual: nuevas instrucciones de central,
-      configuración de maniquíes, subida de fotos de cumplimiento y revisión. Guarda este archivo en la misma
-      carpeta que <b>index.html</b> para que el enlace funcione.
+      configuración de maniquíes, subida de fotos de cumplimiento y revisión. Se abre en una pestaña nueva.
     </p>
     <a href="https://paulandrademkt.github.io/Plataforma-visual/" target="_blank" class="btn btn-primary" style="text-decoration:none;display:inline-block;">Abrir RV Visual →</a>
   </div>
@@ -481,6 +452,22 @@
   .resumen-chip.selected { background:#F3E8D2; border-color: var(--gold); font-weight:700; }
   .mini-del { background:none; border:none; color:var(--mid); cursor:pointer; font-size:15px; padding:2px 6px; border-radius:4px; }
   .mini-del:hover { color:var(--red); background:#FDE; }
+  /* ── HUB Hoy ── */
+  .hub-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:24px; }
+  .hub-tile { background:var(--white); border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow); padding:18px 18px 14px; cursor:pointer; transition:all .15s; display:flex; flex-direction:column; gap:16px; min-height:148px; justify-content:space-between; }
+  .hub-tile:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+  .hub-top { display:flex; justify-content:space-between; align-items:center; }
+  .hub-icon { font-size:20px; }
+  .hub-dot { width:9px; height:9px; border-radius:50%; background:var(--mid); }
+  .hub-dot.ok { background:var(--green); }
+  .hub-dot.alerta { background:var(--red); box-shadow:0 0 0 3px var(--red-light); }
+  .hub-num { font-family:'DM Serif Display',serif; font-size:34px; line-height:1; }
+  .hub-num-txt { font-family:'DM Serif Display',serif; font-size:19px; line-height:1.25; display:block; }
+  .hub-label { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--slate); margin-top:5px; }
+  .hub-sub { font-size:12px; color:var(--slate); display:flex; justify-content:space-between; align-items:center; gap:8px; border-top:1px solid #F0EDE6; padding-top:10px; }
+  .hub-go { color:var(--gold); font-weight:700; font-size:14px; }
+  @media (max-width:760px){ .hub-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:460px){ .hub-grid{ grid-template-columns:1fr; } }
 </style>
 <script>
 // ══════════════════════════════════
@@ -848,7 +835,7 @@ function renderComunicadosCentral() {
 }
 
 // ══════════════════════════════════
-// HOY (bitácora)
+// HOY (hub de inicio)
 // ══════════════════════════════════
 function renderHoy() {
   document.getElementById('hoy-tienda').textContent = 'Tienda '+tNombre(cur);
@@ -856,38 +843,42 @@ function renderHoy() {
   const mios = DB.clientes.filter(c=>c.tienda===cur);
   const cumplesHoy = mios.filter(c=>c.cumpleEnDias===0);
   const pendFelicitar = cumplesHoy.filter(c=>c.cumple.estado!=='contactado').length;
-  const sinLeer = DB.comunicados.filter(c=>c.tiendas.includes(cur) && !c.leidoPor.includes(cur));
+  const sinLeer = DB.comunicados.filter(c=>c.tiendas.includes(cur) && !c.leidoPor.includes(cur)).length;
   const activa = DB.promos.find(p=>promoEstado(p).tag.startsWith('Activa'));
   const proxima = DB.promos.filter(p=>diasHasta(p.inicio)>0).sort((a,b)=>a.inicio.localeCompare(b.inicio))[0];
-  const enCamino = DB.pedidos.filter(p=>p.tienda===cur && p.estado==='Enviado').length;
-  document.getElementById('resumen-strip').innerHTML = `
-    <div class="resumen-chip" onclick="goTo('clientes')">🎂 <b>${pendFelicitar}</b> por felicitar</div>
-    <div class="resumen-chip ${sinLeer.length?'alerta':''}" onclick="goTo('comunicados')">📣 <b>${sinLeer.length}</b> sin leer</div>
-    ${activa?`<div class="resumen-chip" onclick="goTo('promos')">🏷️ ${esc(activa.nombre)} <b>activa</b></div>`:''}
-    ${proxima?`<div class="resumen-chip" onclick="goTo('promos')">⏳ ${esc(proxima.nombre)} en <b>${diasHasta(proxima.inicio)} días</b></div>`:''}
-    ${enCamino?`<div class="resumen-chip" onclick="goTo('material')">📦 <b>${enCamino}</b> pedido${enCamino>1?'s':''} en camino</div>`:''}`;
-  document.getElementById('hoy-comunicados').innerHTML = sinLeer.slice(0,3).map(comItem).join('') || '<div class="empty">Estás al día ✓</div>';
-  document.getElementById('hoy-cumples').innerHTML = cumplesHoy.length
-    ? cumplesHoy.map(c=>cliRow(c,'cumple',`${c.gasto} € último año`)).join('')
-    : '<div class="empty">Hoy no hay cumpleaños 🎈</div>';
-  document.getElementById('hoy-promos').innerHTML = DB.promos
-    .filter(p=>promoEstado(p).tag!=='Finalizada')
-    .sort((a,b)=>a.inicio.localeCompare(b.inicio)).slice(0,3).map(p=>{
-      const e = promoEstado(p);
-      return `<div class="promo-item" style="border-left-color:${p.color};margin-bottom:8px;">
-        <div class="promo-top"><span class="promo-nombre">${esc(p.nombre)}</span><span class="badge ${e.cls}">${e.tag}</span></div>
-        <div class="promo-meta">${esc(p.meca)}${p.plv?` · PLV: ${esc(p.plv)}`:''}</div></div>`;
-    }).join('') || '<div class="empty">Sin campañas previstas</div>';
-  const pedAbiertos = DB.pedidos.filter(p=>p.tienda===cur && p.estado!=='Recibido');
-  document.getElementById('hoy-material').innerHTML = pedAbiertos.length
-    ? pedAbiertos.map(p=>`<div class="cli-row" style="align-items:center;"><div class="cli-info"><div class="cli-nombre" style="font-size:13px;">${esc(p.item)}</div><div class="cli-meta">${p.cant} uds · ${relTime(p.fecha)}</div></div><span class="badge ${PED_BADGE[p.estado]}">${p.estado}</span></div>`).join('')
-    : '<div class="empty">No tienes pedidos abiertos</div>';
-  const recu = mios.filter(c=>c.meses>=6).sort((a,b)=>b.gasto-a.gasto);
-  const recuPend = recu.filter(c=>c.recu.estado==='pendiente');
-  document.getElementById('hoy-recu').innerHTML = recu.length
-    ? `<div style="font-size:13px;color:var(--slate);line-height:1.6;"><b style="color:var(--black);">${recuPend.length}</b> clientas llevan más de 6 meses sin comprar.
-       Sugerencia de hoy: ${recuPend.slice(0,3).map(c=>'<b>'+esc(c.nombre.split(' ').slice(0,2).join(' '))+'</b>').join(', ')||'—'}.</div>`
-    : '<div class="empty">Nada pendiente aquí</div>';
+  const abiertos = DB.pedidos.filter(p=>p.tienda===cur && p.estado!=='Recibido');
+  const enCamino = abiertos.filter(p=>p.estado==='Enviado').length;
+  const recuPend = mios.filter(c=>c.meses>=6 && c.recu.estado==='pendiente').length;
+
+  const tile = (icon, label, num, sub, dot, action) => `
+    <div class="hub-tile" onclick="${action}">
+      <div class="hub-top"><span class="hub-icon">${icon}</span><span class="hub-dot ${dot}"></span></div>
+      <div><div class="hub-num">${num}</div><div class="hub-label">${label}</div></div>
+      <div class="hub-sub"><span>${sub}</span><span class="hub-go">→</span></div>
+    </div>`;
+  const txt = s => `<span class="hub-num-txt">${esc(s)}</span>`;
+
+  document.getElementById('hub-grid').innerHTML =
+    tile('🎂','Cumpleaños', pendFelicitar,
+      pendFelicitar ? 'clientas por felicitar hoy' : 'todas felicitadas ✓',
+      pendFelicitar ? 'alerta' : 'ok', "goTo('clientes');setCliTab('cumple')") +
+    tile('📞','Recuperación', recuPend,
+      'clientas con +6 meses sin comprar',
+      recuPend ? 'alerta' : 'ok', "goTo('clientes');setCliTab('recu')") +
+    tile('📣','Comunicados', sinLeer,
+      sinLeer ? 'pendientes de leer y confirmar' : 'estás al día ✓',
+      sinLeer ? 'alerta' : 'ok', "goTo('comunicados')") +
+    tile('🏷️','Promociones',
+      activa ? txt(activa.nombre) : (proxima ? txt(proxima.nombre) : '—'),
+      activa ? ('activa · quedan '+(diasHasta(activa.fin)+1)+' días'+(proxima ? ' · luego '+esc(proxima.nombre) : ''))
+             : (proxima ? ('empieza en '+diasHasta(proxima.inicio)+' días') : 'sin campañas previstas'),
+      '', "goTo('promos')") +
+    tile('📦','Material', abiertos.length,
+      abiertos.length ? (enCamino ? enCamino+' en camino · marca la recepción' : 'en gestión por central') : 'sin pedidos abiertos',
+      enCamino ? 'alerta' : (abiertos.length ? '' : 'ok'), "goTo('material')") +
+    tile('🖼️','Visual', txt('RV Visual'),
+      'instrucciones de cambio y fotos', '',
+      "window.open('https://paulandrademkt.github.io/Plataforma-visual/','_blank')");
 }
 
 // ══════════════════════════════════
