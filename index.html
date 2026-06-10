@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV Intranet — Bitácora de Tiendas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap');
+
+  :root {
+    --black: #0D0D0D;
+    --white: #FAFAF8;
+    --sand: #F0EDE6;
+    --mid: #C8C2B8;
+    --slate: #6B6560;
+    --gold: #B8965A;
+    --gold-light: #E8D5AA;
+    --red: #C0392B;
+    --red-light: #F7DCD8;
+    --green: #1E7B4B;
+    --green-light: #D4EDDA;
+    --orange: #D4590A;
+    --orange-light: #FAE3D4;
+    --blue: #1A4A7A;
+    --blue-light: #D6E4F5;
+    --purple: #6B3B8B;
+    --purple-light: #EDE0F5;
+    --border: #DDD8D0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--sand); color: var(--black); min-height: 100vh; font-size: 14px; }
+
+  /* ── TOP NAV ── */
+  .topnav { background: var(--black); color: var(--white); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 52px; position: sticky; top: 0; z-index: 100; gap: 12px; }
+  .topnav-brand { font-family: 'DM Serif Display', serif; font-size: 17px; letter-spacing: 0.03em; white-space: nowrap; }
+  .topnav-brand span { color: var(--gold); }
+  .topnav-right { display: flex; align-items: center; gap: 10px; }
+  .mode-btn { background: none; border: 1px solid #333; color: #999; padding: 5px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; transition: all 0.15s; white-space: nowrap; }
+  .mode-btn.active { background: var(--gold); border-color: var(--gold); color: var(--black); }
+  .mode-btn:hover:not(.active) { border-color: #666; color: var(--white); }
+  .tienda-select { background: #1A1A1A; border: 1px solid #333; color: var(--white); border-radius: 4px; padding: 5px 10px; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer; }
+
+  /* ── SUBNAV ── */
+  .subnav { background: var(--white); border-bottom: 1px solid var(--border); display: flex; gap: 2px; padding: 0 24px; overflow-x: auto; position: sticky; top: 52px; z-index: 90; }
+  .subnav::-webkit-scrollbar { display: none; }
+  .tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 13px 16px 11px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--slate); cursor: pointer; transition: all 0.15s; white-space: nowrap; display: flex; align-items: center; gap: 7px; }
+  .tab:hover { color: var(--black); }
+  .tab.active { color: var(--black); border-bottom-color: var(--gold); }
+  .tab .count { background: var(--red); color: white; font-size: 10px; font-weight: 700; min-width: 17px; height: 17px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; padding: 0 5px; }
+  .tab .count.zero { display: none; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  .page-header { margin-bottom: 24px; }
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 26px; line-height: 1.1; }
+  .page-sub { color: var(--slate); margin-top: 4px; font-size: 13px; }
+
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); padding: 22px; margin-bottom: 18px; }
+  .card-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .card-title .ct-action { font-size: 11px; color: var(--gold); cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 600; }
+
+  label { font-size: 12px; font-weight: 500; color: var(--slate); display: block; margin-bottom: 5px; }
+  input[type=text], input[type=date], input[type=number], input[type=tel], textarea, select { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; font-family: 'Inter', sans-serif; font-size: 13px; background: var(--white); color: var(--black); transition: border-color 0.15s, box-shadow 0.15s; outline: none; }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-light); }
+  textarea { resize: vertical; min-height: 70px; }
+  .form-row { display: grid; gap: 14px; margin-bottom: 14px; }
+  .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row.cols-4 { grid-template-columns: 2fr 1fr 1fr 1fr; }
+
+  .btn { border: none; border-radius: 6px; padding: 10px 20px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--gold); color: var(--white); }
+  .btn-primary:hover { background: #9A7A46; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--slate); }
+  .btn-ghost:hover { border-color: var(--black); color: var(--black); }
+  .btn-sm { padding: 6px 12px; font-size: 11px; }
+  .actions-bar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; white-space: nowrap; }
+  .badge-pending { background: var(--orange-light); color: var(--orange); }
+  .badge-done { background: var(--green-light); color: var(--green); }
+  .badge-new { background: var(--blue-light); color: var(--blue); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-gold { background: #F3E8D2; color: #8A6E3C; }
+  .badge-grey { background: var(--sand); color: var(--slate); }
+  .badge-purple { background: var(--purple-light); color: var(--purple); }
+
+  /* ── HOY ── */
+  .hoy-header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+  .hoy-fecha { font-family: 'DM Serif Display', serif; font-size: 32px; line-height: 1.05; }
+  .hoy-fecha small { display: block; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+  .resumen-strip { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 24px; }
+  .resumen-chip { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 7px 15px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 7px; cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow); }
+  .resumen-chip:hover { border-color: var(--gold); }
+  .resumen-chip b { font-weight: 700; }
+  .resumen-chip.alerta { border-color: var(--red); }
+  .hoy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .hoy-col { min-width: 0; }
+
+  /* ── CLIENTES ── */
+  .cli-row { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid #F0EDE6; }
+  .cli-row:last-child { border-bottom: none; }
+  .cli-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--sand); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--slate); flex-shrink: 0; }
+  .cli-avatar.vip { background: #F3E8D2; border-color: var(--gold); color: #8A6E3C; }
+  .cli-info { flex: 1; min-width: 0; }
+  .cli-nombre { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .cli-meta { font-size: 12px; color: var(--slate); margin-top: 2px; }
+  .cli-meta a { color: var(--blue); text-decoration: none; font-weight: 600; }
+  .cli-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; flex-shrink: 0; width: 290px; }
+  .seg { display: flex; gap: 4px; }
+  .seg-btn { border: 1px solid var(--border); background: var(--white); border-radius: 5px; padding: 6px 10px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--slate); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .seg-btn:hover { border-color: var(--gold); }
+  .seg-btn.on-ok { background: var(--green); border-color: var(--green); color: white; }
+  .seg-btn.on-nc { background: var(--orange); border-color: var(--orange); color: white; }
+  .seg-btn.on-pend { background: var(--slate); border-color: var(--slate); color: white; }
+  .cli-nota { width: 100%; }
+  .cli-nota input { font-size: 12px; padding: 6px 10px; }
+  .cli-ts { font-size: 10px; color: var(--mid); }
+  .umbral-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .umbral-row select { width: auto; }
+
+  /* ── PROMOS / CALENDARIO ── */
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-mes { font-family: 'DM Serif Display', serif; font-size: 18px; text-transform: capitalize; }
+  .cal-nav { display: flex; gap: 6px; }
+  .cal-nav button { border: 1px solid var(--border); background: var(--white); border-radius: 5px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; color: var(--slate); }
+  .cal-nav button:hover { border-color: var(--gold); color: var(--black); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--slate); text-align: center; padding: 4px 0; }
+  .cal-day { min-height: 52px; border: 1px solid #EFEBE3; border-radius: 5px; padding: 4px 5px; font-size: 11px; color: var(--slate); background: var(--white); position: relative; }
+  .cal-day.fuera { opacity: 0.35; }
+  .cal-day.hoy { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold-light); }
+  .cal-day.hoy .cal-num { color: var(--gold); font-weight: 700; }
+  .cal-bars { display: flex; flex-direction: column; gap: 2px; margin-top: 3px; }
+  .cal-bar { height: 5px; border-radius: 3px; }
+  .cal-leyenda { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 11px; color: var(--slate); }
+  .cal-leyenda span { display: flex; align-items: center; gap: 5px; }
+  .cal-dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+  .promo-item { border: 1px solid var(--border); border-left: 4px solid var(--gold); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; background: var(--white); }
+  .promo-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .promo-nombre { font-weight: 700; font-size: 14px; }
+  .promo-meta { font-size: 12px; color: var(--slate); margin-top: 4px; }
+
+  /* ── MATERIAL ── */
+  .refs-table { width: 100%; border-collapse: collapse; }
+  .refs-table th { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--slate); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .refs-table td { padding: 10px; border-bottom: 1px solid #F0EDE6; font-size: 13px; vertical-align: middle; }
+  .refs-table tr:last-child td { border-bottom: none; }
+  .steps { display: flex; align-items: center; gap: 4px; }
+  .step-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--mid); }
+  .step-dot.done { background: var(--green); }
+  .step-line { width: 14px; height: 2px; background: var(--mid); }
+  .step-line.done { background: var(--green); }
+
+  /* ── COMUNICADOS ── */
+  .com-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; background: var(--white); cursor: pointer; transition: all 0.15s; }
+  .com-item:hover { border-color: var(--gold); }
+  .com-item.noleido { border-left: 4px solid var(--red); }
+  .com-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .com-titulo { font-weight: 700; font-size: 14px; }
+  .com-meta { font-size: 12px; color: var(--slate); margin-top: 3px; }
+  .lect-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .lect-chip { font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 10px; background: var(--sand); color: var(--slate); border: 1px solid var(--border); }
+  .lect-chip.si { background: var(--green-light); color: var(--green); border-color: transparent; }
+  .lect-bar-wrap { height: 6px; background: var(--sand); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .lect-bar { height: 100%; background: var(--green); border-radius: 3px; }
+
+  /* ── STATS (Central) ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); padding: 16px; }
+  .stat-num { font-family: 'DM Serif Display', serif; font-size: 28px; line-height: 1; }
+  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--slate); margin-top: 6px; }
+
+  /* ── CHIPS TIENDAS ── */
+  .tiendas-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tienda-chip { border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.15s; background: var(--white); }
+  .tienda-chip:hover { border-color: var(--gold); }
+  .tienda-chip.selected { background: var(--gold); border-color: var(--gold); color: var(--white); }
+  .tienda-chip.select-all { border-style: dashed; color: var(--slate); }
+  .tienda-chip.select-all.selected { background: var(--black); border-color: var(--black); color: var(--white); border-style: solid; }
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--slate); margin: 12px 0; cursor: pointer; }
+  .check-row input { width: auto; }
+
+  /* ── MODAL / TOAST / EMPTY ── */
+  .modal-bg { position: fixed; inset: 0; background: rgba(13,13,13,0.55); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--white); border-radius: 10px; box-shadow: var(--shadow-lg); max-width: 560px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 26px; }
+  .modal h3 { font-family: 'DM Serif Display', serif; font-size: 20px; margin-bottom: 4px; }
+  .modal .com-meta { margin-bottom: 14px; }
+  .modal-body { font-size: 14px; line-height: 1.65; color: #2A2A2A; white-space: pre-wrap; margin-bottom: 20px; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--black); color: var(--white); padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); transform: translateY(80px); opacity: 0; transition: all 0.25s; z-index: 998; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: var(--green); }
+  .empty { text-align: center; color: var(--mid); font-size: 13px; padding: 24px 10px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (max-width: 760px) {
+    .form-row.cols-2, .form-row.cols-3, .form-row.cols-4 { grid-template-columns: 1fr; }
+    .hoy-grid { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .cli-row { flex-wrap: wrap; }
+    .cli-actions { width: 100%; align-items: stretch; }
+    .seg { flex-wrap: wrap; }
+    .topnav { padding: 0 14px; }
+    .subnav { padding: 0 8px; }
+    .container { padding: 20px 14px 60px; }
+  }
+</style>
+</head>
+<body>
+<!-- ══════════ TOP NAV ══════════ -->
+<nav class="topnav">
+  <div class="topnav-brand">RV <span>Intranet</span> · Bitácora de Tiendas</div>
+  <div class="topnav-right">
+    <select class="tienda-select" id="tienda-select" onchange="cambiarTienda(this.value)"></select>
+    <button class="mode-btn active" id="mode-tienda" onclick="switchMode('tienda')">🏪 Mi Tienda</button>
+    <button class="mode-btn" id="mode-central" onclick="switchMode('central')">🏢 Central</button>
+  </div>
+</nav>
+
+<!-- ══════════ SUBNAV TIENDA ══════════ -->
+<div class="subnav" id="subnav-tienda">
+  <button class="tab active" data-v="hoy" onclick="goTo('hoy')">☀️ Hoy</button>
+  <button class="tab" data-v="clientes" onclick="goTo('clientes')">🎂 Clientes <span class="count" id="count-cli">0</span></button>
+  <button class="tab" data-v="promos" onclick="goTo('promos')">🏷️ Promociones</button>
+  <button class="tab" data-v="material" onclick="goTo('material')">📦 Material</button>
+  <button class="tab" data-v="comunicados" onclick="goTo('comunicados')">📣 Comunicados <span class="count" id="count-com">0</span></button>
+  <button class="tab" data-v="visual" onclick="goTo('visual')">🖼️ Visual</button>
+</div>
+
+<!-- ══════════ SUBNAV CENTRAL ══════════ -->
+<div class="subnav" id="subnav-central" style="display:none;">
+  <button class="tab active" data-v="c-panel" onclick="goTo('c-panel')">📊 Panel</button>
+  <button class="tab" data-v="c-comunicados" onclick="goTo('c-comunicados')">📣 Comunicados</button>
+  <button class="tab" data-v="c-material" onclick="goTo('c-material')">📦 Material <span class="count" id="count-ped">0</span></button>
+  <button class="tab" data-v="c-promos" onclick="goTo('c-promos')">🏷️ Promociones</button>
+</div>
+
+<!-- ══════════ VISTA: HOY ══════════ -->
+<div id="view-hoy" class="view active"><div class="container">
+  <div class="hoy-header">
+    <div class="hoy-fecha"><small id="hoy-tienda">—</small><span id="hoy-fecha">—</span></div>
+  </div>
+  <div class="resumen-strip" id="resumen-strip"></div>
+  <div class="hoy-grid">
+    <div class="hoy-col">
+      <div class="card">
+        <div class="card-title">📣 Comunicados sin leer <span class="ct-action" onclick="goTo('comunicados')">Ver todos →</span></div>
+        <div id="hoy-comunicados"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎂 Cumpleaños de hoy <span class="ct-action" onclick="goTo('clientes')">Ir a clientes →</span></div>
+        <div id="hoy-cumples"></div>
+      </div>
+    </div>
+    <div class="hoy-col">
+      <div class="card">
+        <div class="card-title">🏷️ Promociones</div>
+        <div id="hoy-promos"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📦 Mis pedidos de material <span class="ct-action" onclick="goTo('material')">Pedir material →</span></div>
+        <div id="hoy-material"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📞 Clientes a recuperar <span class="ct-action" onclick="goTo('clientes');setCliTab('recu')">Ver lista →</span></div>
+        <div id="hoy-recu"></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ══════════ VISTA: CLIENTES ══════════ -->
+<div id="view-clientes" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Agenda de clientes</div>
+    <div class="page-sub">Contacta, anota el resultado y deja constancia — sin llamadas a central</div>
+  </div>
+  <div class="resumen-strip" style="margin-top:0;">
+    <div class="resumen-chip" id="clitab-cumple" onclick="setCliTab('cumple')">🎂 Cumpleaños</div>
+    <div class="resumen-chip" id="clitab-recu" onclick="setCliTab('recu')">📞 Recuperación</div>
+  </div>
+  <div id="cli-panel-cumple">
+    <div class="card">
+      <div class="card-title">Cumplen años hoy</div>
+      <div id="cumples-hoy"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Próximos 7 días</div>
+      <div id="cumples-prox"></div>
+    </div>
+  </div>
+  <div id="cli-panel-recu" style="display:none;">
+    <div class="card">
+      <div class="card-title">Clientes sin comprar desde hace…</div>
+      <div class="umbral-row">
+        <select id="umbral" onchange="renderRecu()">
+          <option value="6">6 meses o más</option>
+          <option value="9">9 meses o más</option>
+          <option value="12">12 meses o más</option>
+        </select>
+        <span style="font-size:12px;color:var(--slate);">Ordenados por gasto del último año</span>
+      </div>
+      <div id="recu-lista"></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- ══════════ VISTA: PROMOS (tienda) ══════════ -->
+<div id="view-promos" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Calendario de promociones</div>
+    <div class="page-sub">Qué está activo, qué viene y qué material necesita cada campaña</div>
+  </div>
+  <div class="card">
+    <div class="cal-head">
+      <div class="cal-mes" id="cal-mes">—</div>
+      <div class="cal-nav"><button onclick="moverMes(-1)">‹</button><button onclick="moverMes(1)">›</button></div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-leyenda" id="cal-leyenda"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Detalle de campañas</div>
+    <div id="promo-lista"></div>
+  </div>
+</div></div>
+
+<!-- ══════════ VISTA: MATERIAL (tienda) ══════════ -->
+<div id="view-material" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Petición de material</div>
+    <div class="page-sub">Solicita y sigue el estado de tus pedidos sin llamar ni escribir a central</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Nueva petición</div>
+    <div class="form-row cols-4">
+      <div><label>Categoría</label>
+        <select id="mat-cat">
+          <option>Bolsas</option><option>Papel seda</option><option>Cajas regalo</option>
+          <option>Etiquetas / precios</option><option>Alarmas</option><option>PLV / cartelería</option>
+          <option>Perchas</option><option>Consumibles TPV</option><option>Otro</option>
+        </select></div>
+      <div><label>Artículo / detalle</label><input type="text" id="mat-item" placeholder="Ej: Bolsa M asa rígida"></div>
+      <div><label>Cantidad</label><input type="number" id="mat-cant" min="1" value="1"></div>
+      <div><label>Urgencia</label>
+        <select id="mat-urg"><option>Normal</option><option>Urgente</option></select></div>
+    </div>
+    <div class="form-row"><div><label>Nota (opcional)</label><input type="text" id="mat-nota" placeholder="Ej: para la campaña de Pre-Rebajas"></div></div>
+    <div class="actions-bar"><button class="btn btn-primary" onclick="crearPedido()">Enviar petición</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Mis pedidos</div>
+    <div id="mat-lista"></div>
+  </div>
+</div></div>
+
+<!-- ══════════ VISTA: COMUNICADOS (tienda) ══════════ -->
+<div id="view-comunicados" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Comunicados de central</div>
+    <div class="page-sub">Léelos y confirma — central ve qué tiendas están al día</div>
+  </div>
+  <div id="com-lista"></div>
+</div></div>
+
+<!-- ══════════ VISTA: VISUAL (tienda) ══════════ -->
+<div id="view-visual" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Visual merchandising</div>
+    <div class="page-sub">Instrucciones de cambio, maniquíes y fotos de cumplimiento</div>
+  </div>
+  <div class="card">
+    <div class="card-title">RV Visual — Plataforma de cambios</div>
+    <p style="font-size:13px;color:var(--slate);line-height:1.6;margin-bottom:16px;">
+      Las instrucciones de visual se gestionan en la plataforma RV Visual: nuevas instrucciones de central,
+      configuración de maniquíes, subida de fotos de cumplimiento y revisión. Guarda este archivo en la misma
+      carpeta que <b>index.html</b> para que el enlace funcione.
+    </p>
+    <a href="index.html" target="_blank" class="btn btn-primary" style="text-decoration:none;display:inline-block;">Abrir RV Visual →</a>
+  </div>
+</div></div>
+
+<!-- ══════════ VISTA CENTRAL: PANEL ══════════ -->
+<div id="view-c-panel" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Panel de cumplimiento</div>
+    <div class="page-sub">Estado de la red de tiendas, hoy</div>
+  </div>
+  <div class="stat-grid" id="c-stats"></div>
+  <div class="card">
+    <div class="card-title">Detalle por tienda</div>
+    <div style="overflow-x:auto;"><table class="refs-table" id="c-tabla-tiendas"></table></div>
+  </div>
+</div></div>
+
+<!-- ══════════ VISTA CENTRAL: COMUNICADOS ══════════ -->
+<div id="view-c-comunicados" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Comunicados</div>
+    <div class="page-sub">Publica y comprueba qué tiendas lo han leído</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Nuevo comunicado</div>
+    <div class="form-row"><div><label>Título</label><input type="text" id="com-titulo" placeholder="Ej: Horario especial inicio de Rebajas"></div></div>
+    <div class="form-row"><div><label>Mensaje</label><textarea id="com-cuerpo" placeholder="Escribe el comunicado…"></textarea></div></div>
+    <label>Tiendas destinatarias</label>
+    <div class="tiendas-grid" id="com-tiendas" style="margin-top:6px;"></div>
+    <label class="check-row"><input type="checkbox" id="com-confirm" checked> Requiere confirmación de lectura</label>
+    <div class="actions-bar"><button class="btn btn-primary" onclick="publicarComunicado()">Publicar</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Publicados</div>
+    <div id="c-com-lista"></div>
+  </div>
+</div></div>
+
+<!-- ══════════ VISTA CENTRAL: MATERIAL ══════════ -->
+<div id="view-c-material" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Pedidos de material</div>
+    <div class="page-sub">Gestiona las peticiones de toda la red</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Peticiones</div>
+    <div style="overflow-x:auto;"><table class="refs-table" id="c-mat-tabla"></table></div>
+  </div>
+</div></div>
+
+<!-- ══════════ VISTA CENTRAL: PROMOS ══════════ -->
+<div id="view-c-promos" class="view"><div class="container">
+  <div class="page-header">
+    <div class="page-title">Gestión de promociones</div>
+    <div class="page-sub">Las campañas publicadas aparecen en el calendario de todas las tiendas</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Nueva campaña</div>
+    <div class="form-row cols-2">
+      <div><label>Nombre</label><input type="text" id="pr-nombre" placeholder="Ej: Pre-Rebajas clientas"></div>
+      <div><label>Mecánica</label><input type="text" id="pr-meca" placeholder="Ej: -20% en selección PV26"></div>
+    </div>
+    <div class="form-row cols-3">
+      <div><label>Inicio</label><input type="date" id="pr-inicio"></div>
+      <div><label>Fin</label><input type="date" id="pr-fin"></div>
+      <div><label>Color</label>
+        <select id="pr-color">
+          <option value="#B8965A">Dorado</option><option value="#1A4A7A">Azul</option>
+          <option value="#C0392B">Rojo</option><option value="#1E7B4B">Verde</option><option value="#6B3B8B">Morado</option>
+        </select></div>
+    </div>
+    <div class="form-row"><div><label>Material PLV asociado</label><input type="text" id="pr-plv" placeholder="Ej: Vinilo escaparate + cartel mostrador"></div></div>
+    <div class="actions-bar"><button class="btn btn-primary" onclick="crearPromo()">Publicar campaña</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Campañas</div>
+    <div id="c-promo-lista"></div>
+  </div>
+</div></div>
+
+<!-- ══════════ MODAL COMUNICADO ══════════ -->
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)cerrarModal()">
+  <div class="modal">
+    <h3 id="modal-titulo">—</h3>
+    <div class="com-meta" id="modal-meta">—</div>
+    <div class="modal-body" id="modal-cuerpo">—</div>
+    <div class="actions-bar">
+      <button class="btn btn-ghost" onclick="cerrarModal()">Cerrar</button>
+      <button class="btn btn-primary" id="modal-leido-btn" onclick="marcarLeido()">✓ Marcar como leído</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<style>
+  .resumen-chip.selected { background:#F3E8D2; border-color: var(--gold); font-weight:700; }
+  .mini-del { background:none; border:none; color:var(--mid); cursor:pointer; font-size:15px; padding:2px 6px; border-radius:4px; }
+  .mini-del:hover { color:var(--red); background:#FDE; }
+</style>
+<script>
+// ══════════════════════════════════
+// CONSTANTES
+// ══════════════════════════════════
+const TIENDAS = [
+  { id:'t1', nombre:'Serrano' },
+  { id:'t2', nombre:'Ourense' },
+  { id:'t3', nombre:'Pontevedra' },
+  { id:'t4', nombre:'A Coruña' },
+  { id:'t5', nombre:'Vigo' },
+  { id:'t6', nombre:'Santiago' },
+  { id:'t7', nombre:'Bilbao' },
+];
+const DIA = 86400000;
+const HOY = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const EST_LABEL = { contactado:'Contactado', nocontesta:'No contesta', pendiente:'No contactado' };
+const PED_ESTADOS = ['Solicitado','Aprobado','Enviado','Recibido'];
+const PED_BADGE = { Solicitado:'badge-pending', Aprobado:'badge-new', Enviado:'badge-gold', Recibido:'badge-done' };
+
+// ══════════════════════════════════
+// DATOS DE EJEMPLO (semilla)
+// ══════════════════════════════════
+function seed() {
+  const nf = ['Carmen','María','Lucía','Ana','Elena','Marta','Rosa','Isabel','Teresa','Nuria','Sofía','Pilar','Beatriz','Alba','Clara','Mercedes','Laura','Irene','Silvia','Noelia','Cristina','Eva','Patricia','Mónica','Raquel','Susana','Olga','Dolores'];
+  const ap = ['Otero','Vázquez','Rodríguez','Fernández','García','López','Pérez','González','Domínguez','Iglesias','Castro','Souto','Alonso','Rivas','Novoa','Méndez','Seoane','Blanco','Carballo','Pardo','Vila','Rey','Lema','Cid','Lorenzo','Quiroga','Freire','Mosquera'];
+  const clientes = [];
+  TIENDAS.forEach((t, i) => {
+    const mk = (k, extra) => ({
+      id: 'cl'+i+'_'+k,
+      nombre: nf[(i*9+k*3)%nf.length]+' '+ap[(i*5+k*7)%ap.length]+' '+ap[(i*11+k*2+13)%ap.length],
+      tel: '6'+String(10000000 + ((i*37+k*91)*12347)%89999999).slice(0,8),
+      tienda: t.id,
+      vip: k===0 || k===5,
+      gasto: 240 + ((i*7+k*13)%14)*85,
+      cumple: { estado:'pendiente', nota:'', ts:null },
+      recu: { estado:'pendiente', nota:'', ts:null },
+      ...extra
+    });
+    // 2 cumplen años HOY
+    clientes.push(mk(0, { cumpleEnDias:0, meses:2 }));
+    clientes.push(mk(1, { cumpleEnDias:0, meses:1 }));
+    // 3 en los próximos días
+    clientes.push(mk(2, { cumpleEnDias:(i%3)+1, meses:3 }));
+    clientes.push(mk(3, { cumpleEnDias:((i+2)%6)+1, meses:2 }));
+    clientes.push(mk(4, { cumpleEnDias:((i+4)%6)+1, meses:4 }));
+    // 4 inactivos (recuperación)
+    clientes.push(mk(5, { cumpleEnDias:null, meses:7 }));
+    clientes.push(mk(6, { cumpleEnDias:null, meses:10 }));
+    clientes.push(mk(7, { cumpleEnDias:null, meses:13 }));
+    clientes.push(mk(8, { cumpleEnDias:null, meses:18 }));
+  });
+  const hoy = HOY().getTime();
+  const iso = ts => new Date(ts).toISOString().slice(0,10);
+  const promos = [
+    { id:'p1', nombre:'Día de la Madre', meca:'-15% en accesorios y pañuelos', inicio:iso(hoy-40*DIA), fin:iso(hoy-33*DIA), color:'#6B3B8B', plv:'Cartel mostrador A5' },
+    { id:'p2', nombre:'Especial Lino', meca:'2ª unidad -30% en prendas de lino', inicio:iso(hoy-6*DIA), fin:iso(hoy+5*DIA), color:'#1A4A7A', plv:'Cartel A4 mostrador + stopper' },
+    { id:'p3', nombre:'Pre-Rebajas Clientas', meca:'-20% en selección PV26 · solo clientas fidelizadas', inicio:iso(hoy+9*DIA), fin:iso(hoy+18*DIA), color:'#B8965A', plv:'Vinilo escaparate + cartel mostrador' },
+    { id:'p4', nombre:'Rebajas Verano', meca:'Hasta -50% · primera marcación', inicio:iso(hoy+19*DIA), fin:iso(hoy+62*DIA), color:'#C0392B', plv:'Kit completo Rebajas (vinilos + carteles + flejes)' },
+  ];
+  const pedidos = [
+    { id:'pe1', tienda:'t2', cat:'Bolsas', item:'Bolsa M asa rígida', cant:200, urg:'Normal', nota:'', estado:'Enviado', fecha:hoy-2*DIA },
+    { id:'pe2', tienda:'t2', cat:'Papel seda', item:'Papel seda logo', cant:500, urg:'Normal', nota:'', estado:'Solicitado', fecha:hoy },
+    { id:'pe3', tienda:'t5', cat:'PLV / cartelería', item:'Kit PLV Rebajas', cant:1, urg:'Urgente', nota:'Escaparate doble', estado:'Aprobado', fecha:hoy-DIA },
+    { id:'pe4', tienda:'t1', cat:'Alarmas', item:'Alarma concha pequeña', cant:100, urg:'Normal', nota:'', estado:'Recibido', fecha:hoy-5*DIA },
+  ];
+  const todas = TIENDAS.map(t=>t.id);
+  const comunicados = [
+    { id:'c1', titulo:'Fotos de escaparate para Pre-Rebajas', cuerpo:'Antes del viernes, subid a RV Visual una foto del escaparate actual de vuestra tienda.\n\nLa necesitamos para planificar los vinilos de Pre-Rebajas. Formato horizontal, con la fachada completa si es posible.', fecha:hoy, confirm:true, tiendas:todas, leidoPor:[] },
+    { id:'c2', titulo:'Horario especial inicio de Rebajas', cuerpo:'El primer día de Rebajas todas las tiendas abren 30 minutos antes de su horario habitual.\n\nRecordad reforzar la zona de caja y tener preparado el almacén con la reposición de las referencias señaladas en el plan de Rebajas.', fecha:hoy-DIA, confirm:true, tiendas:todas, leidoPor:['t1','t3','t6'] },
+    { id:'c3', titulo:'Nuevo procedimiento de traspasos entre tiendas', cuerpo:'A partir de ahora, los traspasos entre tiendas se registran siempre antes del envío físico de la prenda.\n\nEl albarán debe ir dentro de la caja y el registro hecho el mismo día. Cualquier duda, contestad a este comunicado en vuestra próxima reunión semanal.', fecha:hoy-4*DIA, confirm:false, tiendas:todas, leidoPor:['t1','t2','t3','t4','t5','t7'] },
+  ];
+  return { clientes, promos, pedidos, comunicados };
+}
+
+// ══════════════════════════════════
+// ESTADO + PERSISTENCIA
+// ══════════════════════════════════
+let DB;
+let cur = localStorage.getItem('rv_intranet_tienda') || 't2';
+let modo = 'tienda';
+let cliTab = 'cumple';
+let calFecha = HOY();
+let comTiendasSel = TIENDAS.map(t=>t.id);
+let modalCom = null;
+
+function load() {
+  try { const s = localStorage.getItem('rv_intranet_v1'); if (s) { DB = JSON.parse(s); return; } } catch(e){}
+  DB = seed(); save();
+}
+function save() { localStorage.setItem('rv_intranet_v1', JSON.stringify(DB)); }
+const tNombre = id => (TIENDAS.find(t=>t.id===id)||{}).nombre || id;
+
+// ══════════════════════════════════
+// NAVEGACIÓN
+// ══════════════════════════════════
+function switchMode(m) {
+  modo = m;
+  document.getElementById('mode-tienda').classList.toggle('active', m==='tienda');
+  document.getElementById('mode-central').classList.toggle('active', m==='central');
+  document.getElementById('subnav-tienda').style.display = m==='tienda' ? 'flex' : 'none';
+  document.getElementById('subnav-central').style.display = m==='central' ? 'flex' : 'none';
+  document.getElementById('tienda-select').style.display = m==='tienda' ? 'block' : 'none';
+  goTo(m==='tienda' ? 'hoy' : 'c-panel');
+}
+function goTo(v) {
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  const nav = document.getElementById(modo==='tienda' ? 'subnav-tienda' : 'subnav-central');
+  nav.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.v===v));
+  renderAll();
+  window.scrollTo({top:0});
+}
+function cambiarTienda(id) { cur = id; localStorage.setItem('rv_intranet_tienda', id); renderAll(); }
+function setCliTab(t) {
+  cliTab = t;
+  document.getElementById('cli-panel-cumple').style.display = t==='cumple' ? 'block' : 'none';
+  document.getElementById('cli-panel-recu').style.display = t==='recu' ? 'block' : 'none';
+  document.getElementById('clitab-cumple').classList.toggle('selected', t==='cumple');
+  document.getElementById('clitab-recu').classList.toggle('selected', t==='recu');
+}
+
+// ══════════════════════════════════
+// HELPERS
+// ══════════════════════════════════
+const esc = s => String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const iniciales = n => n.split(' ').slice(0,2).map(p=>p[0]).join('');
+const fmtDia = d => d.toLocaleDateString('es-ES',{weekday:'short', day:'numeric', month:'short'});
+const fmtCorta = iso => new Date(iso+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric', month:'short'});
+function relTime(ts) {
+  const dias = Math.round((HOY().getTime()-new Date(ts).setHours(0,0,0,0))/DIA);
+  return dias<=0 ? 'hoy' : dias===1 ? 'ayer' : 'hace '+dias+' días';
+}
+function diasHasta(iso) { return Math.round((new Date(iso+'T00:00:00')-HOY())/DIA); }
+function promoEstado(p) {
+  const i = diasHasta(p.inicio), f = diasHasta(p.fin);
+  if (f < 0) return {tag:'Finalizada', cls:'badge-grey'};
+  if (i > 0) return {tag:'Empieza en '+i+(i===1?' día':' días'), cls:'badge-new'};
+  return {tag:'Activa · quedan '+(f+1)+(f===0?' día':' días'), cls:'badge-done'};
+}
+let toastTimer;
+function toast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show '+(tipo||'');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ══════════════════════════════════
+// CLIENTES (cumpleaños + recuperación)
+// ══════════════════════════════════
+function setEstado(id, tipo, estado) {
+  const c = DB.clientes.find(x=>x.id===id); if (!c) return;
+  c[tipo].estado = estado; c[tipo].ts = Date.now();
+  save(); renderAll();
+}
+function setNota(id, tipo, val) {
+  const c = DB.clientes.find(x=>x.id===id); if (!c) return;
+  c[tipo].nota = val; save();
+}
+function cliRow(c, tipo, metaExtra) {
+  const st = c[tipo];
+  const on = e => st.estado===e;
+  return `<div class="cli-row">
+    <div class="cli-avatar ${c.vip?'vip':''}">${esc(iniciales(c.nombre))}</div>
+    <div class="cli-info">
+      <div class="cli-nombre">${esc(c.nombre)} ${c.vip?'<span class="badge badge-gold">VIP</span>':''}</div>
+      <div class="cli-meta"><a href="tel:+34${c.tel}">📞 ${c.tel}</a> · ${metaExtra}</div>
+      ${st.ts ? `<div class="cli-ts">Último cambio: ${new Date(st.ts).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>` : ''}
+    </div>
+    <div class="cli-actions">
+      <div class="seg">
+        <button class="seg-btn ${on('contactado')?'on-ok':''}" onclick="setEstado('${c.id}','${tipo}','contactado')">✓ Contactado</button>
+        <button class="seg-btn ${on('nocontesta')?'on-nc':''}" onclick="setEstado('${c.id}','${tipo}','nocontesta')">No contesta</button>
+        <button class="seg-btn ${on('pendiente')?'on-pend':''}" onclick="setEstado('${c.id}','${tipo}','pendiente')">No contactado</button>
+      </div>
+      <div class="cli-nota"><input type="text" placeholder="Anota el resultado…" value="${esc(st.nota)}" onchange="setNota('${c.id}','${tipo}',this.value)"></div>
+    </div>
+  </div>`;
+}
+function renderClientes() {
+  const mios = DB.clientes.filter(c=>c.tienda===cur);
+  const hoyC = mios.filter(c=>c.cumpleEnDias===0);
+  document.getElementById('cumples-hoy').innerHTML = hoyC.length
+    ? hoyC.map(c=>cliRow(c,'cumple',`Última compra hace ${c.meses} ${c.meses===1?'mes':'meses'} · ${c.gasto} € último año`)).join('')
+    : '<div class="empty">Hoy no cumple años ninguna clienta de tu tienda 🎈</div>';
+  const prox = mios.filter(c=>c.cumpleEnDias>0 && c.cumpleEnDias<=6).sort((a,b)=>a.cumpleEnDias-b.cumpleEnDias);
+  document.getElementById('cumples-prox').innerHTML = prox.length
+    ? prox.map(c=>{
+        const d = new Date(HOY().getTime()+c.cumpleEnDias*DIA);
+        return `<div class="cli-row">
+          <div class="cli-avatar ${c.vip?'vip':''}">${esc(iniciales(c.nombre))}</div>
+          <div class="cli-info">
+            <div class="cli-nombre">${esc(c.nombre)} ${c.vip?'<span class="badge badge-gold">VIP</span>':''}</div>
+            <div class="cli-meta"><a href="tel:+34${c.tel}">📞 ${c.tel}</a> · ${c.gasto} € último año</div>
+          </div>
+          <span class="badge badge-new">🎂 ${fmtDia(d)}</span>
+        </div>`;
+      }).join('')
+    : '<div class="empty">Sin cumpleaños en los próximos días</div>';
+  renderRecu();
+}
+function renderRecu() {
+  const u = parseInt(document.getElementById('umbral').value, 10);
+  const lista = DB.clientes.filter(c=>c.tienda===cur && c.meses>=u).sort((a,b)=>b.gasto-a.gasto);
+  document.getElementById('recu-lista').innerHTML = lista.length
+    ? lista.map(c=>cliRow(c,'recu',`Última compra hace <b>${c.meses} meses</b> · ${c.gasto} € último año`)).join('')
+    : '<div class="empty">Ninguna clienta supera ese umbral. ¡Buena señal!</div>';
+}
+
+// ══════════════════════════════════
+// PROMOCIONES
+// ══════════════════════════════════
+function moverMes(n) { calFecha = new Date(calFecha.getFullYear(), calFecha.getMonth()+n, 1); renderPromos(); }
+function renderPromos() {
+  const y = calFecha.getFullYear(), m = calFecha.getMonth();
+  document.getElementById('cal-mes').textContent = calFecha.toLocaleDateString('es-ES',{month:'long', year:'numeric'});
+  const dows = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+  let html = dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const primero = new Date(y, m, 1);
+  const offset = (primero.getDay()+6)%7;
+  const enMes = new Date(y, m+1, 0).getDate();
+  const hoy = HOY();
+  for (let i=0; i<offset; i++) html += '<div class="cal-day fuera"></div>';
+  for (let d=1; d<=enMes; d++) {
+    const fecha = new Date(y, m, d);
+    const esHoy = fecha.getTime()===hoy.getTime();
+    const barras = DB.promos.filter(p => fecha>=new Date(p.inicio+'T00:00:00') && fecha<=new Date(p.fin+'T00:00:00'))
+      .slice(0,3).map(p=>`<div class="cal-bar" style="background:${p.color}" title="${esc(p.nombre)}"></div>`).join('');
+    html += `<div class="cal-day ${esHoy?'hoy':''}"><span class="cal-num">${d}</span><div class="cal-bars">${barras}</div></div>`;
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+  document.getElementById('cal-leyenda').innerHTML = DB.promos.map(p=>`<span><span class="cal-dot" style="background:${p.color}"></span>${esc(p.nombre)}</span>`).join('');
+  const orden = [...DB.promos].sort((a,b)=>a.inicio.localeCompare(b.inicio));
+  const item = (p, borrable) => {
+    const e = promoEstado(p);
+    return `<div class="promo-item" style="border-left-color:${p.color}">
+      <div class="promo-top"><span class="promo-nombre">${esc(p.nombre)}</span>
+        <span style="display:flex;gap:8px;align-items:center;"><span class="badge ${e.cls}">${e.tag}</span>${borrable?`<button class="mini-del" onclick="borrarPromo('${p.id}')" title="Eliminar">×</button>`:''}</span></div>
+      <div class="promo-meta">${esc(p.meca)} · <b>${fmtCorta(p.inicio)} → ${fmtCorta(p.fin)}</b>${p.plv?` · PLV: ${esc(p.plv)}`:''}</div>
+    </div>`;
+  };
+  const elT = document.getElementById('promo-lista'); if (elT) elT.innerHTML = orden.map(p=>item(p,false)).join('') || '<div class="empty">Sin campañas</div>';
+  const elC = document.getElementById('c-promo-lista'); if (elC) elC.innerHTML = orden.map(p=>item(p,true)).join('') || '<div class="empty">Sin campañas</div>';
+}
+function crearPromo() {
+  const nombre = document.getElementById('pr-nombre').value.trim();
+  const meca = document.getElementById('pr-meca').value.trim();
+  const inicio = document.getElementById('pr-inicio').value;
+  const fin = document.getElementById('pr-fin').value;
+  if (!nombre || !inicio || !fin) { toast('Completa nombre, inicio y fin'); return; }
+  if (fin < inicio) { toast('La fecha de fin es anterior al inicio'); return; }
+  DB.promos.push({ id:'p'+Date.now(), nombre, meca, inicio, fin, color:document.getElementById('pr-color').value, plv:document.getElementById('pr-plv').value.trim() });
+  save(); ['pr-nombre','pr-meca','pr-inicio','pr-fin','pr-plv'].forEach(i=>document.getElementById(i).value='');
+  toast('Campaña publicada en todas las tiendas','success'); renderAll();
+}
+function borrarPromo(id) { DB.promos = DB.promos.filter(p=>p.id!==id); save(); renderAll(); toast('Campaña eliminada'); }
+
+// ══════════════════════════════════
+// MATERIAL
+// ══════════════════════════════════
+function pasos(estado) {
+  const idx = PED_ESTADOS.indexOf(estado);
+  return '<span class="steps">'+PED_ESTADOS.map((e,i)=>
+    `<span class="step-dot ${i<=idx?'done':''}" title="${e}"></span>${i<3?`<span class="step-line ${i<idx?'done':''}"></span>`:''}`).join('')+'</span>';
+}
+function crearPedido() {
+  const item = document.getElementById('mat-item').value.trim();
+  const cant = parseInt(document.getElementById('mat-cant').value,10)||1;
+  if (!item) { toast('Indica el artículo que necesitas'); return; }
+  DB.pedidos.unshift({ id:'pe'+Date.now(), tienda:cur, cat:document.getElementById('mat-cat').value, item, cant,
+    urg:document.getElementById('mat-urg').value, nota:document.getElementById('mat-nota').value.trim(), estado:'Solicitado', fecha:Date.now() });
+  save(); document.getElementById('mat-item').value=''; document.getElementById('mat-nota').value=''; document.getElementById('mat-cant').value=1;
+  toast('Petición enviada a central','success'); renderAll();
+}
+function avanzarPedido(id) {
+  const p = DB.pedidos.find(x=>x.id===id); if (!p) return;
+  const i = PED_ESTADOS.indexOf(p.estado);
+  if (i < PED_ESTADOS.length-1) { p.estado = PED_ESTADOS[i+1]; save(); renderAll(); toast('Pedido → '+p.estado,'success'); }
+}
+function renderMaterial() {
+  const mios = DB.pedidos.filter(p=>p.tienda===cur);
+  document.getElementById('mat-lista').innerHTML = mios.length ? `<table class="refs-table"><tr><th>Artículo</th><th>Cant.</th><th>Pedido</th><th>Progreso</th><th>Estado</th></tr>`+
+    mios.map(p=>`<tr>
+      <td><b>${esc(p.item)}</b><div style="font-size:11px;color:var(--slate);">${esc(p.cat)}${p.urg==='Urgente'?' · <span class="badge badge-red">Urgente</span>':''}</div></td>
+      <td>${p.cant}</td><td style="color:var(--slate);font-size:12px;">${relTime(p.fecha)}</td>
+      <td>${pasos(p.estado)}</td>
+      <td><span class="badge ${PED_BADGE[p.estado]}">${p.estado}</span>${p.estado==='Enviado'?` <button class="btn btn-ghost btn-sm" onclick="avanzarPedido('${p.id}')">✓ Recibido</button>`:''}</td>
+    </tr>`).join('')+'</table>' : '<div class="empty">Aún no has pedido nada</div>';
+}
+function renderMaterialCentral() {
+  const orden = [...DB.pedidos].sort((a,b)=>b.fecha-a.fecha);
+  document.getElementById('c-mat-tabla').innerHTML = `<tr><th>Tienda</th><th>Artículo</th><th>Cant.</th><th>Pedido</th><th>Estado</th><th></th></tr>`+
+    (orden.map(p=>`<tr>
+      <td><b>${tNombre(p.tienda)}</b></td>
+      <td>${esc(p.item)}<div style="font-size:11px;color:var(--slate);">${esc(p.cat)}${p.nota?' · '+esc(p.nota):''}${p.urg==='Urgente'?' · <span class="badge badge-red">Urgente</span>':''}</div></td>
+      <td>${p.cant}</td><td style="color:var(--slate);font-size:12px;">${relTime(p.fecha)}</td>
+      <td><span class="badge ${PED_BADGE[p.estado]}">${p.estado}</span></td>
+      <td>${p.estado!=='Recibido'?`<button class="btn btn-ghost btn-sm" onclick="avanzarPedido('${p.id}')">→ ${PED_ESTADOS[PED_ESTADOS.indexOf(p.estado)+1]}</button>`:''}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="empty">Sin peticiones</td></tr>');
+}
+
+// ══════════════════════════════════
+// COMUNICADOS
+// ══════════════════════════════════
+function comItem(c) {
+  const leido = c.leidoPor.includes(cur);
+  return `<div class="com-item ${leido?'':'noleido'}" onclick="abrirComunicado('${c.id}')">
+    <div class="com-top"><span class="com-titulo">${esc(c.titulo)}</span>
+      <span class="badge ${leido?'badge-done':'badge-red'}">${leido?'✓ Leído':'Sin leer'}</span></div>
+    <div class="com-meta">${relTime(c.fecha)}${c.confirm?' · requiere confirmación':''}</div>
+  </div>`;
+}
+function renderComunicados() {
+  const mios = DB.comunicados.filter(c=>c.tiendas.includes(cur)).sort((a,b)=>b.fecha-a.fecha);
+  document.getElementById('com-lista').innerHTML = mios.map(comItem).join('') || '<div class="empty">No hay comunicados para tu tienda</div>';
+}
+function abrirComunicado(id) {
+  modalCom = DB.comunicados.find(c=>c.id===id); if (!modalCom) return;
+  document.getElementById('modal-titulo').textContent = modalCom.titulo;
+  document.getElementById('modal-meta').textContent = 'Central · '+relTime(modalCom.fecha);
+  document.getElementById('modal-cuerpo').textContent = modalCom.cuerpo;
+  document.getElementById('modal-leido-btn').style.display = (modo==='tienda' && !modalCom.leidoPor.includes(cur)) ? 'inline-block' : 'none';
+  document.getElementById('modal-bg').classList.add('open');
+}
+function cerrarModal() { document.getElementById('modal-bg').classList.remove('open'); modalCom = null; }
+function marcarLeido() {
+  if (modalCom && !modalCom.leidoPor.includes(cur)) { modalCom.leidoPor.push(cur); save(); }
+  cerrarModal(); toast('Comunicado confirmado como leído','success'); renderAll();
+}
+function toggleComTienda(el, id) {
+  if (id==='all') {
+    const todas = comTiendasSel.length===TIENDAS.length;
+    comTiendasSel = todas ? [] : TIENDAS.map(t=>t.id);
+  } else {
+    comTiendasSel = comTiendasSel.includes(id) ? comTiendasSel.filter(x=>x!==id) : [...comTiendasSel, id];
+  }
+  renderComTiendasChips();
+}
+function renderComTiendasChips() {
+  document.getElementById('com-tiendas').innerHTML =
+    `<div class="tienda-chip select-all ${comTiendasSel.length===TIENDAS.length?'selected':''}" onclick="toggleComTienda(this,'all')">Todas</div>`+
+    TIENDAS.map(t=>`<div class="tienda-chip ${comTiendasSel.includes(t.id)?'selected':''}" onclick="toggleComTienda(this,'${t.id}')">${t.nombre}</div>`).join('');
+}
+function publicarComunicado() {
+  const titulo = document.getElementById('com-titulo').value.trim();
+  const cuerpo = document.getElementById('com-cuerpo').value.trim();
+  if (!titulo || !cuerpo) { toast('Completa título y mensaje'); return; }
+  if (!comTiendasSel.length) { toast('Selecciona al menos una tienda'); return; }
+  DB.comunicados.unshift({ id:'c'+Date.now(), titulo, cuerpo, fecha:Date.now(), confirm:document.getElementById('com-confirm').checked, tiendas:[...comTiendasSel], leidoPor:[] });
+  save(); document.getElementById('com-titulo').value=''; document.getElementById('com-cuerpo').value='';
+  toast('Comunicado publicado','success'); renderAll();
+}
+function renderComunicadosCentral() {
+  const orden = [...DB.comunicados].sort((a,b)=>b.fecha-a.fecha);
+  document.getElementById('c-com-lista').innerHTML = orden.map(c=>{
+    const pct = Math.round(100*c.leidoPor.length/c.tiendas.length);
+    return `<div class="com-item" onclick="abrirComunicado('${c.id}')">
+      <div class="com-top"><span class="com-titulo">${esc(c.titulo)}</span>
+        <span class="badge ${pct===100?'badge-done':'badge-pending'}">Leído por ${c.leidoPor.length}/${c.tiendas.length}</span></div>
+      <div class="com-meta">${relTime(c.fecha)}${c.confirm?' · requiere confirmación':''}</div>
+      <div class="lect-bar-wrap"><div class="lect-bar" style="width:${pct}%"></div></div>
+      <div class="lect-chips">${c.tiendas.map(t=>`<span class="lect-chip ${c.leidoPor.includes(t)?'si':''}">${c.leidoPor.includes(t)?'✓ ':''}${tNombre(t)}</span>`).join('')}</div>
+    </div>`;
+  }).join('') || '<div class="empty">Sin comunicados</div>';
+}
+
+// ══════════════════════════════════
+// HOY (bitácora)
+// ══════════════════════════════════
+function renderHoy() {
+  document.getElementById('hoy-tienda').textContent = 'Tienda '+tNombre(cur);
+  document.getElementById('hoy-fecha').textContent = HOY().toLocaleDateString('es-ES',{weekday:'long', day:'numeric', month:'long'});
+  const mios = DB.clientes.filter(c=>c.tienda===cur);
+  const cumplesHoy = mios.filter(c=>c.cumpleEnDias===0);
+  const pendFelicitar = cumplesHoy.filter(c=>c.cumple.estado!=='contactado').length;
+  const sinLeer = DB.comunicados.filter(c=>c.tiendas.includes(cur) && !c.leidoPor.includes(cur));
+  const activa = DB.promos.find(p=>promoEstado(p).tag.startsWith('Activa'));
+  const proxima = DB.promos.filter(p=>diasHasta(p.inicio)>0).sort((a,b)=>a.inicio.localeCompare(b.inicio))[0];
+  const enCamino = DB.pedidos.filter(p=>p.tienda===cur && p.estado==='Enviado').length;
+  document.getElementById('resumen-strip').innerHTML = `
+    <div class="resumen-chip" onclick="goTo('clientes')">🎂 <b>${pendFelicitar}</b> por felicitar</div>
+    <div class="resumen-chip ${sinLeer.length?'alerta':''}" onclick="goTo('comunicados')">📣 <b>${sinLeer.length}</b> sin leer</div>
+    ${activa?`<div class="resumen-chip" onclick="goTo('promos')">🏷️ ${esc(activa.nombre)} <b>activa</b></div>`:''}
+    ${proxima?`<div class="resumen-chip" onclick="goTo('promos')">⏳ ${esc(proxima.nombre)} en <b>${diasHasta(proxima.inicio)} días</b></div>`:''}
+    ${enCamino?`<div class="resumen-chip" onclick="goTo('material')">📦 <b>${enCamino}</b> pedido${enCamino>1?'s':''} en camino</div>`:''}`;
+  document.getElementById('hoy-comunicados').innerHTML = sinLeer.slice(0,3).map(comItem).join('') || '<div class="empty">Estás al día ✓</div>';
+  document.getElementById('hoy-cumples').innerHTML = cumplesHoy.length
+    ? cumplesHoy.map(c=>cliRow(c,'cumple',`${c.gasto} € último año`)).join('')
+    : '<div class="empty">Hoy no hay cumpleaños 🎈</div>';
+  document.getElementById('hoy-promos').innerHTML = DB.promos
+    .filter(p=>promoEstado(p).tag!=='Finalizada')
+    .sort((a,b)=>a.inicio.localeCompare(b.inicio)).slice(0,3).map(p=>{
+      const e = promoEstado(p);
+      return `<div class="promo-item" style="border-left-color:${p.color};margin-bottom:8px;">
+        <div class="promo-top"><span class="promo-nombre">${esc(p.nombre)}</span><span class="badge ${e.cls}">${e.tag}</span></div>
+        <div class="promo-meta">${esc(p.meca)}${p.plv?` · PLV: ${esc(p.plv)}`:''}</div></div>`;
+    }).join('') || '<div class="empty">Sin campañas previstas</div>';
+  const pedAbiertos = DB.pedidos.filter(p=>p.tienda===cur && p.estado!=='Recibido');
+  document.getElementById('hoy-material').innerHTML = pedAbiertos.length
+    ? pedAbiertos.map(p=>`<div class="cli-row" style="align-items:center;"><div class="cli-info"><div class="cli-nombre" style="font-size:13px;">${esc(p.item)}</div><div class="cli-meta">${p.cant} uds · ${relTime(p.fecha)}</div></div><span class="badge ${PED_BADGE[p.estado]}">${p.estado}</span></div>`).join('')
+    : '<div class="empty">No tienes pedidos abiertos</div>';
+  const recu = mios.filter(c=>c.meses>=6).sort((a,b)=>b.gasto-a.gasto);
+  const recuPend = recu.filter(c=>c.recu.estado==='pendiente');
+  document.getElementById('hoy-recu').innerHTML = recu.length
+    ? `<div style="font-size:13px;color:var(--slate);line-height:1.6;"><b style="color:var(--black);">${recuPend.length}</b> clientas llevan más de 6 meses sin comprar.
+       Sugerencia de hoy: ${recuPend.slice(0,3).map(c=>'<b>'+esc(c.nombre.split(' ').slice(0,2).join(' '))+'</b>').join(', ')||'—'}.</div>`
+    : '<div class="empty">Nada pendiente aquí</div>';
+}
+
+// ══════════════════════════════════
+// CENTRAL: PANEL
+// ══════════════════════════════════
+function renderPanel() {
+  const cumplesHoy = DB.clientes.filter(c=>c.cumpleEnDias===0);
+  const felicitados = cumplesHoy.filter(c=>c.cumple.estado==='contactado').length;
+  const pedAbiertos = DB.pedidos.filter(p=>p.estado!=='Recibido').length;
+  let lecturas = 0, posibles = 0;
+  DB.comunicados.forEach(c=>{ lecturas += c.leidoPor.length; posibles += c.tiendas.length; });
+  const recuContactados = DB.clientes.filter(c=>c.meses>=6 && c.recu.estado==='contactado').length;
+  document.getElementById('c-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${felicitados}/${cumplesHoy.length}</div><div class="stat-label">Cumpleaños contactados hoy</div></div>
+    <div class="stat-card"><div class="stat-num">${posibles?Math.round(100*lecturas/posibles):0}%</div><div class="stat-label">Lectura de comunicados</div></div>
+    <div class="stat-card"><div class="stat-num">${pedAbiertos}</div><div class="stat-label">Pedidos de material abiertos</div></div>
+    <div class="stat-card"><div class="stat-num">${recuContactados}</div><div class="stat-label">Clientas recuperadas (contactos)</div></div>`;
+  document.getElementById('c-tabla-tiendas').innerHTML = `<tr><th>Tienda</th><th>Cumpleaños hoy</th><th>Comunicados leídos</th><th>Pedidos abiertos</th></tr>`+
+    TIENDAS.map(t=>{
+      const cu = DB.clientes.filter(c=>c.tienda===t.id && c.cumpleEnDias===0);
+      const fe = cu.filter(c=>c.cumple.estado==='contactado').length;
+      const coms = DB.comunicados.filter(c=>c.tiendas.includes(t.id));
+      const le = coms.filter(c=>c.leidoPor.includes(t.id)).length;
+      const pe = DB.pedidos.filter(p=>p.tienda===t.id && p.estado!=='Recibido').length;
+      const ok = cu.length>0 && fe===cu.length;
+      return `<tr><td><b>${t.nombre}</b></td>
+        <td><span class="badge ${ok?'badge-done':fe>0?'badge-pending':'badge-grey'}">${fe}/${cu.length}</span></td>
+        <td><span class="badge ${le===coms.length?'badge-done':'badge-pending'}">${le}/${coms.length}</span></td>
+        <td>${pe||'—'}</td></tr>`;
+    }).join('');
+}
+
+// ══════════════════════════════════
+// RENDER GLOBAL + INIT
+// ══════════════════════════════════
+function updateCounts() {
+  const pendFelicitar = DB.clientes.filter(c=>c.tienda===cur && c.cumpleEnDias===0 && c.cumple.estado!=='contactado').length;
+  const sinLeer = DB.comunicados.filter(c=>c.tiendas.includes(cur) && !c.leidoPor.includes(cur)).length;
+  const solicitados = DB.pedidos.filter(p=>p.estado==='Solicitado').length;
+  const setC = (id,n) => { const e=document.getElementById(id); e.textContent=n; e.classList.toggle('zero', n===0); };
+  setC('count-cli', pendFelicitar); setC('count-com', sinLeer); setC('count-ped', solicitados);
+}
+function renderAll() {
+  renderHoy(); renderClientes(); renderPromos(); renderMaterial(); renderComunicados();
+  renderPanel(); renderComunicadosCentral(); renderMaterialCentral(); renderComTiendasChips(); updateCounts();
+}
+function init() {
+  load();
+  document.getElementById('tienda-select').innerHTML = TIENDAS.map(t=>`<option value="${t.id}" ${t.id===cur?'selected':''}>🏪 ${t.nombre}</option>`).join('');
+  setCliTab('cumple');
+  renderAll();
+}
+init();
+</script>
+</body>
+</html>
